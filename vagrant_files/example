@@ -1,0 +1,35 @@
+# vi: set ft=ruby :
+
+$apt_update = <<-SCRIPT
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
+apt-get -y install xauth libx11-6 libxrender1 libxtst6 libxi6 libfontconfig1
+SCRIPT
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "geerlingguy/ubuntu1804"
+
+    config.vm.provider "virtualbox" do |v|
+        v.memory = 1024
+        v.cpus = 1
+        v.name = "default"
+    end
+
+    # configure hostname
+    config.vm.hostname = "default-vm"
+
+    # enable xforwarding
+    config.ssh.forward_agent = true
+    config.ssh.forward_x11 = true
+
+    config.vm.provision "initial", type: "shell" do |init|
+        init.inline = $apt_update
+    end
+
+=begin
+    config.vm.provision "somename", type: "shell" do |somename|
+      somename.path = "provision/provision.sh"\
+      somename.args = ['arg0', 'arg1']
+    end
+=end
+end
