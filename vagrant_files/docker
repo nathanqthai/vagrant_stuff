@@ -1,0 +1,50 @@
+$apt_update = <<-SCRIPT
+apt-get update
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y upgrade
+apt-get -y install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+apt-get update
+apt-get -y install docker-ce docker-ce-cli containerd.io
+apt-get -y install tmux vim git
+echo "export EDITOR=vim" >> $HOME/.bashrc
+SCRIPT
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "geerlingguy/ubuntu1804"
+
+    config.vm.provider "virtualbox" do |v|
+        v.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+        v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        #v.memory = 4096
+        #v.cpus = 2
+        #v.name = "default"
+    end
+
+    # configure hostname
+    config.vm.hostname = "kafka-test"
+
+    # message to user
+    #config.vm.post_up_message = ""
+
+    config.vm.provision "initial", type: "shell" do |init|
+        init.inline = $apt_update
+    end
+
+    config.vm.provision "external", type: "shell" do |ext|
+      ext.path = "bootstrap.sh"
+      ext.args = ["/vagrant", "/tmp"]
+    end
+end
+
+
+
